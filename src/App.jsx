@@ -19,6 +19,7 @@ export default function App() {
   const [newTask, setNewTask] = useState({ task: '', dept: '', progress: 0 });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [isSignUp, setIsSignUp] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? null));
@@ -107,14 +108,42 @@ export default function App() {
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border border-slate-200">
         <div className="text-center mb-8">
-          <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"><Lock className="text-white" size={30} /></div>
+          <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Lock className="text-white" size={30} />
+          </div>
           <h1 className="text-3xl font-black text-slate-800 italic uppercase">ed-dash</h1>
+          <p className="text-slate-400 text-sm font-bold mt-2">
+            {isSignUp ? "새로운 계정을 생성합니다" : "관리자 시스템에 접속하세요"}
+          </p>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); supabase.auth.signInWithPassword({ email, password }).then(({error}) => error && alert("로그인 실패")); }} className="space-y-4">
-          <input type="email" placeholder="이메일" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input type="password" placeholder="비밀번호" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button type="submit" className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-blue-700">접속하기</button>
+
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          if (isSignUp) {
+            const { error } = await supabase.auth.signUp({ email, password });
+            if (error) alert("회원가입 실패: " + error.message);
+            else alert("가입 성공! 이메일 인증이 필요할 수 있습니다.");
+          } else {
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) alert("로그인 실패: 이메일 또는 비밀번호를 확인하세요.");
+          }
+        }} className="space-y-4">
+          <input type="email" placeholder="이메일 주소" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:border-blue-500 transition-all" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="password" placeholder="비밀번호 (6자리 이상)" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:border-blue-500 transition-all" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          
+          <button type="submit" className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all uppercase">
+            {isSignUp ? "계정 만들기" : "접속하기"}
+          </button>
         </form>
+
+        <div className="mt-8 text-center">
+          <button 
+            onClick={() => setIsSignUp(!isSignUp)} 
+            className="text-slate-400 hover:text-blue-600 font-bold text-sm underline underline-offset-4"
+          >
+            {isSignUp ? "이미 계정이 있으신가요? 로그인" : "처음이신가요? 회원가입"}
+          </button>
+        </div>
       </div>
     </div>
   );
